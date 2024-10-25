@@ -344,11 +344,13 @@ function executeInstruction(instruction) {
                     registers[instruction.args[0]] = args[1] + args[2];
                     break;
                 case 'SUB':
-                    registers[instruction.args[0]] = args[1] - args[2];
+                    registers[instruction.args[0]] = no_flags([1] - args[2]);
                     break;
                 case 'SUBcc':
-                    registers[instruction.args[0]] = args[1] - args[2];
-                    registers['FLAG'] = args[1] - args[2];
+                    registers[instruction.args[0]] = flags(args[1] - args[2]);
+                    break;
+                case 'SUBcc':
+                    registers[instruction.args[0]] = flags(args[1] - args[2]);
                     break;
                 case 'SMUL':
                     registers[instruction.args[0]] = args[1] * args[2];
@@ -404,7 +406,54 @@ function executeInstruction(instruction) {
             return null;
         }
 """, """
-
+        function no_flags(resultado){
+            if (resultado >= 4294967296){ //2**32
+                return resultado % 4294967296;
+            }else if (registers['resultado']<0 && registers['resultado']>(-2147483648)){
+                registers['resultado']= (registers['resultado'] % 4294967296) + 4294967296;
+            }else if(registers['resultado']<=(-2147483648)){
+                registers['resultado']= (registers['resultado'] % 4294967296) + 4294967296;
+            }
+            return args[0];
+        }
+        function flags(resultado){// los numeros de registers['resultado'] van entre o y (2**32) -1, es obligacion de cada uno revisar que la operacion se cumple bien cuando los valores de los registros estan con signo
+            if (resultado >= 4294967296){ //2**32
+                registers['c']=1;
+                registers['n']=0;
+                registers['z']=0;
+                registers['v']=1;
+                return resultado % 4294967296;
+            } else if (registers['resultado']>= 2147483648 && registers['resultado']< 4294967296){
+                registers['c']=0;
+                registers['n']=1;
+                registers['z']=0;
+                registers['v']=1;
+            }else if (registers['resultado']<2147483648 && registers['resultado']>0){
+                registers['c']=0;
+                registers['v']=0;
+                registers['n']=0;
+                registers['z']=0;
+            }else if (registers['resultado']==0){
+                registers['z']=1;
+                registers['c']=0;
+                registers['n']=0;
+                registers['v']=0; 
+            }else if (registers['resultado']<0 && registers['resultado']>(-2147483648)){
+                registers['c']=1;
+                registers['n']=1;
+                registers['z']=0;
+                registers['v']=0;
+                registers['resultado']= (registers['resultado'] % 4294967296) + 4294967296;
+            }else if(registers['resultado']<=(-2147483648)){
+                registers['c']=1;
+                registers['n']=0;
+                registers['z']=0;
+                registers['v']=1;
+                registers['resultado']= (registers['resultado'] % 4294967296) + 4294967296;
+            }
+            return resultado;
+        }
+        
         function step() {
             if (instructionPointer === 0) {
                 const code = document.getElementById('codeInput').value;
