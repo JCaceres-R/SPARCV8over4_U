@@ -23,6 +23,49 @@ import socket
 # Import the API method from the separate file
 from api import api
 
+# Función para ejecutar instrucciones del simulador SPARCV8/4
+def execute_instruction(instruction, registers, memory, pc, flags):
+    """
+    Ejecuta una instrucción del simulador SPARCV8/4.
+    Args:
+        instruction (str): La instrucción en formato de string.
+        registers (dict): Diccionario con los valores de los registros.
+        memory (list): Lista que simula la memoria del sistema.
+        pc (int): Contador del programa (program counter).
+        flags (dict): Diccionario con los valores de los flags (ej: 'c', 'z', 'n', 'v').
+
+    Returns:
+        int: Nuevo valor del contador del programa.
+    """
+    parts = instruction.split()
+    op = parts[0]  # Operación (ej: CALL, BCS, etc.)
+
+    if op == "CALL":
+        """Mateo Alvarado Malaver. La instrucción se recibe como "CALL cte30", donde cte30 es un valor inmediato 
+        en hexadecimal que indica el desplazamiento relativo al PC. Antes de realizar el salto, 
+        se guarda la dirección de retorno (PC + 4) en %o7. Esto es esencial para que, al finalizar 
+        la subrutina, el programa pueda regresar correctamente utilizando la instrucción RET."""
+        # Implementación de CALL
+        cte30 = int(parts[1], 16)
+        registers["%o7"] = pc + 4  # Guarda PC+4 en %o7
+        pc = pc + 4 * cte30  # Salta a la nueva dirección
+        print(f"CALL: Guardando {hex(registers['%o7'])} en %o7 y saltando a {hex(pc)}")
+
+    elif op == "BCS":
+        """Mateo Alvarado Malaver. Se espera que la instrucción venga como "BCS cte22", donde cte22 es un número hexadecimal.
+        Se verifica el valor del flag c. Si c = 1, el PC se actualiza según la fórmula especificada; de lo contrario,
+        simplemente se incrementa en 4."""
+        # Implementación de BCS
+        cte22 = int(parts[1], 16)
+        if flags.get("c", 0) == 1:  # Si el flag de carry es 1
+            pc = 4 * cte22 + pc
+            print(f"BCS: Saltando a {hex(pc)}")
+        else:  # Si el carry no es 1
+            pc += 4
+            print("BCS: No se cumple la condición, avanzando a la siguiente instrucción")
+
+    return pc
+
 # Start the server
 def start_server(ap=True):
     if ap:
