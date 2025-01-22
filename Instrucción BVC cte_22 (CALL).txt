@@ -1,0 +1,103 @@
+<!-- Código: index.html -->
+
+switch (instruction.op) {
+    case 'MOV':
+        registers[instruction.args[0]] = args[1];
+        break;
+    case 'LD':
+        //registers[instruction.args[0]] = read_memory(args[1]);
+        read_memory(args[1],instruction.args[0]);
+        break;
+    case 'OR':
+        registers[instruction.args[0]] = args[1] | args[2];
+        break;
+    case 'ORN':
+        registers[instruction.args[0]] = registers[instruction.args[1]] | (~args[2]);
+        break;
+    case 'XOR':
+        registers[instruction.args[0]] = args[1] ^ args[2];
+        break;
+    case 'XNOR':
+        registers[instruction.args[0]] = ~(args[1] ^ args[2]);
+        break;
+    case 'ST':
+        write_memory(args[0], args[1]);
+        break;
+    case 'ADD':
+        registers[instruction.args[0]] = no_flags(args[1] + args[2]);
+        break;
+    case 'ADDcc':
+        registers[instruction.args[0]] = flags(args[1] + args[2]);
+        break;
+    case 'SUB':
+        registers[instruction.args[0]] = no_flags(args[1] - args[2]);
+        break;
+    case 'SUBcc':
+        registers[instruction.args[0]] = flags(args[1] - args[2]);
+        break;
+    case 'SMUL':
+        registers[instruction.args[0]] = no_flags(args[1] * args[2]);
+        break;
+    case 'SMULcc':
+        registers[instruction.args[0]] = flags(args[1] * args[2]);
+        break;
+    case 'INC':
+        registers[instruction.args[0]] += 1;
+        break;
+    case 'DEC':
+        registers[instruction.args[0]] -= 1;
+        break;
+    case 'SLL':
+        registers[instruction.args[0]] = args[1] << args[2];
+        break;
+    case 'SETHI':
+        registers[instruction.args[0]] = args[1] << 10;
+        break;
+    case 'CLR':
+        registers[instruction.args[0]] = 0;
+        break;
+    case 'CMP':
+        registers['FLAG'] = args[0] - args[1];
+        break;
+    case 'BzS':
+        if (registers['z'] === 1) {
+            return args[0];
+        }
+        break;
+    case 'BzC':
+        if (registers['z'] !== 1) {
+            return args[0];
+        }
+        break;
+    case 'BA':
+        return args[0];
+        break;
+    case 'BVC':
+        // BVC: Verificar si la bandera de desbordamiento (V) está limpia (V == 0)
+        if (registers['V'] === 0) {
+            return args[0]; // Salto a la dirección indicada en args[0] si V es 0
+        }
+        break;
+    case 'CALL':
+        // CALL: Guardamos la dirección de retorno (dirección siguiente a CALL) en el 	registro 'LR' y saltamos a la dirección de destino.
+        registers['LR'] = instruction.address + 1; // Dirección de la instrucción 	siguiente a CALL
+        return args[0]; // Salto a la dirección de la función
+        break;
+    case 'NOP':
+        break;
+    case 'malloc': //malloc Rd,  Cte
+        // malloc: Allocates a block of memory on the heap at runtime.
+        // Rd: Register that stores the address of the beginning of the allocated block.
+        // Cte: The number of bytes to allocate, which must be a multiple of 4 to ensure proper 4 bytes memory alignment.
+        console.log('malloc')
+        malloc(args[1],instruction.args[0])
+        break;
+    case 'backend': //backend 0; backend 1
+        console.log('backend',sw_back.checked)
+        sw_back.checked=Boolean(args[0])
+        console.log('backend',sw_back.checked)
+        break;
+    default:
+        console.log(`Unknown instruction: ${instruction.op}`);
+}
+return null;
