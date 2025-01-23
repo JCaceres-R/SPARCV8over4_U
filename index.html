@@ -511,6 +511,77 @@ NOP
                     sw_back.checked=Boolean(args[0])
                     console.log('backend',sw_back.checked)
                     break;
+		        case "BE":
+            # Leer el valor de la bandera Z
+            z = read_register("Z")  # Flag Z
+            if z == 1:
+                # Calculamos la nueva dirección del PC usando la constante cte22
+                new_pc = 4 * instruction.cte22 + read_register("PC")
+                write_register("PC", new_pc)
+            else:
+                # Si no, incrementamos el PC por 4
+                write_register("PC", read_register("PC") + 4)
+
+        # BLE: Brinca si es menor o igual (condición z=1 o nXORv=1)
+        case "BLE":
+            # Leer los valores de las banderas Z, N y V
+            z = read_register("Z")
+            n = read_register("N")
+            v = read_register("V")
+            if z == 1 or (n ^ v) == 1:  # Condición de salto
+                # Calculamos la nueva dirección del PC usando cte22
+                new_pc = 4 * instruction.cte22 + read_register("PC")
+                write_register("PC", new_pc)
+            else:
+                # Incrementamos el PC por 4
+                write_register("PC", read_register("PC") + 4)
+
+        # BL: Brinca si es menor (condición nXORv=1)
+        case "BL":
+            # Leer los valores de las banderas N y V
+            n = read_register("N")
+            v = read_register("V")
+            if (n ^ v) == 1:
+                # Calculamos la nueva dirección del PC usando cte22
+                new_pc = 4 * instruction.cte22 + read_register("PC")
+                write_register("PC", new_pc)
+            else:
+                # Incrementamos el PC por 4
+                write_register("PC", read_register("PC") + 4)
+
+        # CALL: Llamado a rutina (PC <- PC + 4*cte30, %o7 <- PC)
+        case "CALL":
+            # Guardamos el valor del PC en %o7
+            write_register("%o7", read_register("PC"))
+            # Calculamos la nueva dirección del PC usando cte30
+            new_pc = read_register("PC") + 4 * instruction.cte30
+            write_register("PC", new_pc)
+
+        # RETURN: Retorno de rutina (%o7 + 8)
+        case "RETURN":
+            # Leemos el valor almacenado en %o7 y sumamos 8 para el retorno
+            return_address = read_register("%o7") + 8
+            write_register("PC", return_address)
+
+        # JMPL: Salto con registro (PC <- r[rs1] + r[rs2], r[rd] <- PC)
+        case "JMPL":
+            # Obtener los valores de los registros fuente rs1 y rs2
+            rs1_value = read_register(f"r{instruction.rs1}")  # Leer el valor de r[rs1]
+            rs2_value = read_register(f"r{instruction.rs2}")  # Leer el valor de r[rs2]
+
+            # Calcular la nueva dirección del PC (salto con registros)
+            new_pc = rs1_value + rs2_value
+
+            # Leer el valor actual del PC antes de actualizarlo
+            current_pc = read_register("PC")
+
+            # Guardar el valor actual del PC en el registro destino rd
+            write_register(f"r{instruction.rd}", current_pc)
+
+            # Actualizar el valor del PC con la nueva dirección calculada
+            write_register("PC", new_pc)
+
+
                 default:
                     console.log(`Unknown instruction: ${instruction.op}`);
             }
